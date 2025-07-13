@@ -2,7 +2,10 @@
 
 #include "JeffDouglas415Projectile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Components/SphereComponent.h"
+#include "Components/DecalComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 AJeffDouglas415Projectile::AJeffDouglas415Projectile() 
 {
@@ -16,8 +19,14 @@ AJeffDouglas415Projectile::AJeffDouglas415Projectile()
 	CollisionComp->SetWalkableSlopeOverride(FWalkableSlopeOverride(WalkableSlope_Unwalkable, 0.f));
 	CollisionComp->CanCharacterStepUpOn = ECB_No;
 
+	//create ballmesh object
+	ballMesh = CreateDefaultSubobject<UStaticMeshComponent>("Ball Mesh");
+
 	// Set as root component
 	RootComponent = CollisionComp;
+	
+	//set up attachment for ballmesh to collision
+	ballMesh->SetupAttachment(CollisionComp);
 
 	// Use a ProjectileMovementComponent to govern this projectile's movement
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
@@ -31,6 +40,20 @@ AJeffDouglas415Projectile::AJeffDouglas415Projectile()
 	InitialLifeSpan = 3.0f;
 }
 
+void AJeffDouglas415Projectile::BeginPlay()
+{
+	Super::BeginPlay();
+	//get random color
+	randColor = FLinearColor(UKismetMathLibrary::RandomFloatInRange(0.f, 1.f), UKismetMathLibrary::RandomFloatInRange(0.f, 1.0f), UKismetMathLibrary::RandomFloatInRange(0.f, 1.f), 1.f);
+	//create dynamic material instance
+	dmiMat = UMaterialInstanceDynamic::Create(projMat, this);
+	//set material of ball mesh to dmimat
+	ballMesh->SetMaterial(0, dmiMat);
+	//set the color
+	dmiMat->SetVectorParameterValue("ProjColor", randColor);
+
+}
+
 void AJeffDouglas415Projectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	// Only add impulse and destroy projectile if we hit a physics
@@ -39,5 +62,16 @@ void AJeffDouglas415Projectile::OnHit(UPrimitiveComponent* HitComp, AActor* Othe
 		OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
 
 		Destroy();
+	}
+	if (OtherActor != nullptr)
+	{
+		//choose random number between 0 and 3 and set framenum to it
+		float frameNum = UKismetMathLibrary::RandomFloatInRange(0.f, 3.f);
+		
+		auto Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), baseMat, FVector(UKismetMathLibrary::RandomFloatInRange(20.F, 40.F)), Hit.Location, Hit.Normal.Rotation(), 0.f);
+		auto MatInstance = Decal->CreateDynamicMaterialInstance();
+		//set matinstance color and frame number for decal splat
+		MatInstance->SetVectorParameterValue("Color", randColor);
+		MatInstance->SetScalarParameterValue("Frame", frameNum);
 	}
 }
