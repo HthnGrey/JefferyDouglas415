@@ -6,6 +6,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/DecalComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 AJeffDouglas415Projectile::AJeffDouglas415Projectile() 
 {
@@ -65,6 +67,14 @@ void AJeffDouglas415Projectile::OnHit(UPrimitiveComponent* HitComp, AActor* Othe
 	}
 	if (OtherActor != nullptr)
 	{
+		if (colorP) //if colorP is set
+		{
+			UNiagaraComponent* particleComp = UNiagaraFunctionLibrary::SpawnSystemAttached(colorP, HitComp, NAME_None, FVector(-20.f, 0.f, 0.f), FRotator(0.f), EAttachLocation::KeepRelativeOffset, true); //spawn niagara splat
+			particleComp->SetNiagaraVariableLinearColor(FString("RandColor"), randColor); //set the RandColor to a random color
+			ballMesh->DestroyComponent(); //if color is selected destroy the ballmesh
+			CollisionComp->BodyInstance.SetCollisionProfileName("NoCollision");
+
+		}
 		//choose random number between 0 and 3 and set framenum to it
 		float frameNum = UKismetMathLibrary::RandomFloatInRange(0.f, 3.f);
 		
@@ -74,4 +84,6 @@ void AJeffDouglas415Projectile::OnHit(UPrimitiveComponent* HitComp, AActor* Othe
 		MatInstance->SetVectorParameterValue("Color", randColor);
 		MatInstance->SetScalarParameterValue("Frame", frameNum);
 	}
+
+
 }

@@ -8,6 +8,7 @@
 
 class USphereComponent;
 class UProjectileMovementComponent;
+class UNiagaraSystem;
 
 UCLASS(config=Game)
 class AJeffDouglas415Projectile : public AActor
@@ -36,6 +37,9 @@ class AJeffDouglas415Projectile : public AActor
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* dmiMat;
+
+	UPROPERTY(EditAnywhere)
+	UNiagaraSystem* colorP;
 
 
 
